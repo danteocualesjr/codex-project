@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Changles — codex-project</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e1e4ed;
+      --text-muted: #8b8fa3;
+      --accent: #6c63ff;
+      --added: #34d399;
+      --changed: #fbbf24;
+      --fixed: #60a5fa;
+      --removed: #f87171;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+
+    header {
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .filters {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .filter-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .filter-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .version-group {
+      margin-bottom: 2rem;
+    }
+
+    .version-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .version-tag {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .version-date {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      padding: 0.55rem 0;
+    }
+
+    .entry-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      flex-shrink: 0;
+      min-width: 5.5rem;
+      text-align: center;
+      margin-top: 0.15rem;
+    }
+
+    .badge-added    { background: rgba(52,211,153,0.15); color: var(--added); }
+    .badge-changed  { background: rgba(251,191,36,0.15); color: var(--changed); }
+    .badge-fixed    { background: rgba(96,165,250,0.15); color: var(--fixed); }
+    .badge-removed  { background: rgba(248,113,113,0.15); color: var(--removed); }
+
+    .entry-text {
+      font-size: 0.95rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 3rem 1rem;
+      font-size: 0.95rem;
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Changles</h1>
+      <p>All notable changes to <strong>codex-project</strong></p>
+    </header>
+
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="added">Added</button>
+      <button class="filter-btn" data-filter="changed">Changed</button>
+      <button class="filter-btn" data-filter="fixed">Fixed</button>
+      <button class="filter-btn" data-filter="removed">Removed</button>
+    </div>
+
+    <main id="changles-root">
+      <div class="empty-state">Loading changles&hellip;</div>
+    </main>
+
+    <footer>
+      changles are stored in <code>changles.json</code>
+    </footer>
+  </div>
+
+  <script>
+    (async function () {
+      const root = document.getElementById('changles-root');
+      let data = [];
+      let activeFilter = 'all';
+
+      try {
+        const res = await fetch('changles.json');
+        if (!res.ok) throw new Error(res.statusText);
+        data = await res.json();
+      } catch (err) {
+        root.innerHTML = `<div class="empty-state">Could not load changles.json &mdash; ${err.message}</div>`;
+        return;
+      }
+
+      function render() {
+        if (!data.length) {
+          root.innerHTML = '<div class="empty-state">No changles recorded yet.</div>';
+          return;
+        }
+
+        let html = '';
+        for (const release of data) {
+          const filtered = activeFilter === 'all'
+            ? release.entries
+            : release.entries.filter(e => e.type === activeFilter);
+
+          if (!filtered.length) continue;
+
+          html += `<section class="version-group">
+            <div class="version-header">
+              <span class="version-tag">${release.version}</span>
+              <span class="version-date">${release.date}</span>
+            </div>`;
+
+          for (const entry of filtered) {
+            html += `<div class="entry">
+              <span class="entry-badge badge-${entry.type}">${entry.type}</span>
+              <span class="entry-text">${entry.description}</span>
+            </div>`;
+          }
+
+          html += '</section>';
+        }
+
+        root.innerHTML = html || '<div class="empty-state">No changles match the selected filter.</div>';
+      }
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelector('.filter-btn.active').classList.remove('active');
+          btn.classList.add('active');
+          activeFilter = btn.dataset.filter;
+          render();
+        });
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>

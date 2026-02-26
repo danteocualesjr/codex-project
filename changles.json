@@ -1,0 +1,30 @@
+[
+  {
+    "version": "0.2.0",
+    "date": "2026-02-26",
+    "entries": [
+      {
+        "type": "added",
+        "description": "Changles display page for viewing project changles"
+      },
+      {
+        "type": "added",
+        "description": "JSON-based changles data format"
+      },
+      {
+        "type": "added",
+        "description": "Filter changles by type (added, changed, fixed, removed)"
+      }
+    ]
+  },
+  {
+    "version": "0.1.0",
+    "date": "2026-02-26",
+    "entries": [
+      {
+        "type": "added",
+        "description": "Initial project setup"
+      }
+    ]
+  }
+]
